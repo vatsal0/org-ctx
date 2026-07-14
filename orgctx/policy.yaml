@@ -1,0 +1,54 @@
+# Compaction + impact policy — the tunable heart of the product.
+#
+# plan.md §5.3 argues that the compression policy *is* the product: what earns a
+# permanent line in an entity's living history vs. what folds into a one-liner vs.
+# what gets dropped. Keeping every knob in this one file (rather than scattered in
+# code) is what lets us tune the policy against the eval's state-size plateau and
+# "no lost breaking change" assertions without editing logic.
+#
+# compact.py reads this file and applies the rules below to each entity's event
+# timeline to (re)build its state_summary.
+
+# --- Promotion: which change kinds earn a PERMANENT explicit line in state_summary.
+# Signature changes and removals are contract-breaking facts a consumer must never
+# lose, so they are always promoted.
+promote_kinds:
+  - signature_change
+  - removed
+
+# An `added` event earns a permanent line ONLY if someone actually depends on the
+# entity (it has >=1 inbound edge). A brand-new internal helper nobody consumes
+# does not deserve a permanent line; a brand-new *consumed* endpoint does.
+promote_added_if_inbound: true
+
+# --- Folding: these kinds collapse into a single running, versioned one-liner
+# (e.g. "v3: added idempotency key; v5: currency now ISO-4217") rather than one
+# line each. This is the mechanism that stops churn from bloating the summary.
+fold_kinds:
+  - modified
+  - behavior_note
+
+# --- Dropping: pure internal churn is dropped FROM THE HOT STATE (state_summary)
+# but still retained in the full change_events log (the cold store). We only drop
+# when the entity has no inbound edge — if someone depends on it, even "internal"
+# changes might matter, so we keep them folded instead of dropped.
+drop_kinds:
+  - internal
+require_no_inbound_to_drop: true
+
+# --- Token cap: the per-entity ceiling on state_summary size. On overflow,
+# compact keeps the must-keep lines (origin, latest, every unresolved breaking
+# change) and asks the LLM boundary to recompact the rest. 300 is the plan.md
+# starting value; tune against the plateau plot.
+token_cap: 300
+keep_on_overflow:
+  - origin
+  - latest
+  - unresolved_breaking
+
+# --- Impact traversal depth: how many hops of downstream impact `impact` surfaces
+# before it becomes noise. Only depth 1 (direct consumers) is implemented today;
+# transitive (multi-hop) propagation is a documented future extension (plan.md §10
+# step 4 / §11) that needs a real C->B->A dependency chain to exercise. Kept as a
+# knob so the policy surface is ready for it.
+impact_hops: 1

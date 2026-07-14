@@ -1,0 +1,9 @@
+# payments-svc consumes the shared Charge schema. It produces the /v1/charge
+# route (discovered from source). The declared depends_on_schema edge is the
+# recall floor; the extractor also finds it from the `from contracts import Charge`
+# line and upgrades it to HIGH confidence with a code location.
+service: payments-svc
+consumes:
+  - { edge_kind: depends_on_schema, target: "contracts::schema:Charge" }
+subscribes: []
+publishes: []

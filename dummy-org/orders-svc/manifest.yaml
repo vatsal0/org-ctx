@@ -1,0 +1,12 @@
+# orders-svc consumes payments' charge route and the shared Order schema. Both
+# are declared here (recall floor); the extractor independently finds the HTTP
+# call and the import and upgrades them with code locations.
+service: orders-svc
+consumes:
+  - { edge_kind: consumes,          target: "payments-svc::http:POST /v1/charge" }
+  - { edge_kind: depends_on_schema, target: "contracts::schema:Order" }
+subscribes: []
+# orders-svc PRODUCES the order.created topic. `publishes` declares ownership; the
+# topic entity itself is discovered from the broker.publish(...) call in source.
+publishes:
+  - { target: "orders-svc::topic:order.created" }

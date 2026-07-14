@@ -1,0 +1,21 @@
+# Hand-labeled ground truth for the impact eval (plan.md §7 metrics).
+#
+# For the breaking-change diff (renaming Charge.amount -> amount_cents at HEAD),
+# which services are UPSTREAM-affected — i.e. consume something that changed and so
+# should receive a non-empty "affects you" digest?
+#   - orders-svc   consumes payments' /v1/charge route (its response shape changed)
+#   - payments-svc consumes contracts.Charge (its field set changed)
+# And which must stay SILENT (zero flags)?
+#   - notifications-svc consumes only Event + order.created, neither changed
+break_diff:
+  ref: HEAD
+  upstream_affected:
+    - orders-svc
+    - payments-svc
+  all_services:
+    - orders-svc
+    - payments-svc
+    - notifications-svc
+    - contracts
+  must_be_silent:
+    - notifications-svc

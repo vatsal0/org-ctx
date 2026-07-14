@@ -1,0 +1,14 @@
+# Ground-truth interface edges for the dummy org — the eval ORACLE.
+#
+# This file is written BEFORE the extractor (plan.md §9 step 1): it encodes what we
+# KNOW the cross-service graph should be, independent of any heuristic. The
+# edge-recall metric compares the extractor's output against this set; recall must
+# approach 1.0 (all-source) before we trust the extractor at all.
+#
+# Each edge: from (consumer-side pseudo entity) -> to (producer entity), with kind.
+edges:
+  - { from: "orders-svc::call:POST /v1/charge",          to: "payments-svc::http:POST /v1/charge", kind: consumes }
+  - { from: "orders-svc::import:Order",                  to: "contracts::schema:Order",            kind: depends_on_schema }
+  - { from: "payments-svc::import:Charge",               to: "contracts::schema:Charge",           kind: depends_on_schema }
+  - { from: "notifications-svc::import:Event",           to: "contracts::schema:Event",            kind: depends_on_schema }
+  - { from: "notifications-svc::subscribe:order.created", to: "orders-svc::topic:order.created",    kind: subscribes }

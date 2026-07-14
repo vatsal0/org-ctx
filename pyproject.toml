@@ -1,0 +1,33 @@
+# Packaging metadata for the `orgctx` CLI.
+#
+# We keep this intentionally minimal: an editable install (`pip install -e .`)
+# exposes both the importable `orgctx` package and a console-script entry point
+# so a collaborator can type `orgctx <subcommand>` instead of the longer
+# `python -m orgctx <subcommand>`. Both forms dispatch through the same main().
+#
+# Runtime dependencies are declared in environment.yml (conda-first setup), so we
+# do not duplicate them here; this file only describes how to build/install the
+# package itself. The console_scripts entry point maps the `orgctx` command to
+# `orgctx.__main__:main`.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orgctx"
+version = "0.1.0"
+description = "Git-native contract-change tracking + upstream-context injection (demo)"
+requires-python = ">=3.11"
+
+[project.scripts]
+orgctx = "orgctx.__main__:main"
+
+# Only ship the `orgctx` package itself; the dummy-org, eval, and tests trees are
+# development artifacts, not part of the installable library.
+[tool.setuptools]
+packages = ["orgctx"]
+
+# policy.yaml lives inside the package and is read at runtime, so it must be
+# bundled as package data rather than treated as source.
+[tool.setuptools.package-data]
+orgctx = ["policy.yaml"]

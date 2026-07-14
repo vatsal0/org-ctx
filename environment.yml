@@ -1,0 +1,45 @@
+# Conda environment for the OrgContext demo.
+#
+# The design goal here is *one-command setup for a collaborator*: running
+#   conda env create -f environment.yml
+#   conda activate orgctx
+#   pip install -e .
+# should produce a fully working checkout with the `orgctx` CLI on PATH and the
+# eval/test harness runnable. We deliberately keep the dependency set small.
+#
+# Why each dependency is here:
+#   - python 3.11    : stable `ast` module surface; matches modern syntax we parse.
+#   - pyyaml         : all *domain* config (policy.yaml, manifest.yaml,
+#                      expected_edges.yaml, eval labels) is YAML. NOT used for CLI
+#                      args (those come from an Arguments dataclass per CLAUDE.md).
+#   - pytest         : the three golden scenarios (A/B/C) are encoded as tests.
+#   - matplotlib     : plots "state_summary size over commits" — the visual gate
+#                      that tells us whether the compression policy is holding.
+#   - pydantic       : the dummy services define schemas as Pydantic models; our
+#                      extractor *parses* these (never runs them), but having the
+#                      package installed lets the services import cleanly.
+#   - fastapi        : the dummy services declare routes with FastAPI decorators,
+#                      which our http_route extractor targets. Parsed, not served.
+#   - httpx          : the dummy consumer (orders-svc) issues an HTTP client call
+#                      that our `consumes` edge extractor recognizes.
+#   - anthropic      : the *real* LLM path (summaries/classification). Entirely
+#                      optional at runtime — the deterministic mock is the default
+#                      and is used whenever ANTHROPIC_API_KEY is unset.
+#   - tiktoken       : an offline, deterministic proxy tokenizer for the
+#                      compaction token cap. It is NOT Claude's tokenizer; we only
+#                      need a stable count so the eval's plateau test is reproducible.
+name: orgctx
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pyyaml
+  - pytest
+  - matplotlib
+  - pydantic
+  - fastapi
+  - httpx
+  - pip
+  - pip:
+      - anthropic
+      - tiktoken

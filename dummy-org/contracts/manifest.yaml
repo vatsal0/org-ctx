@@ -1,0 +1,8 @@
+# contracts is a pure producer: it owns shared schemas and consumes nothing.
+# The extractor discovers its schema entities from the source; this manifest only
+# declares the service identity and (empty) dependency lists so the org-wide
+# discovery treats it as a first-class service.
+service: contracts
+consumes: []
+subscribes: []
+publishes: []

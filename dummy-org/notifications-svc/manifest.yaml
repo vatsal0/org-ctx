@@ -1,0 +1,9 @@
+# notifications-svc subscribes to order.created and depends on the Event schema.
+# Note the ABSENCE of any charge/payments dependency — that is what keeps it silent
+# when the /v1/charge contract breaks (the noise-control assertion).
+service: notifications-svc
+consumes:
+  - { edge_kind: depends_on_schema, target: "contracts::schema:Event" }
+subscribes:
+  - { target: "orders-svc::topic:order.created" }
+publishes: []
