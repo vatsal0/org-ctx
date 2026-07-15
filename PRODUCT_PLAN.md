@@ -44,6 +44,7 @@ One substrate, four surfaces (priority order):
 | Swimm / living docs | Human prose docs | No machine-readable timeline, no impact traversal. |
 | git-cliff / commit feeds | Commit-title changelogs | The ignored-feed problem itself; no affected-scope routing. |
 | Graphiti/Zep, Letta, Mem0 | Agent memory graphs | LLM-extracted facts from conversation, generic ontology; ours is deterministically derived from code with provenance (see Part 3). |
+| **Graphify** (graphify.net, YC S26, 87k★) | Tree-sitter AST → JSON knowledge graph (calls/imports/inherits/mixes_in) per repo, MCP + slash-command skill across 15+ agent platforms incl. Claude Code/Cursor/Copilot | **The closest real threat, not hypothetical.** Overlaps hard on surface #1 (agent context injection) and has already shipped the multi-platform skill distribution we planned for Phase C. But it is a **structural**, single-snapshot graph — full call/import graph (broad, noisier), no git history/timeline, no change-event log, no cross-service contract semantics, no breaking-change classification, no compression policy. It answers "what does this code call/import" at a point in time; we answer "what changed in a contract you depend on, and did it break you." See differentiation note below — this is the comparison the pitch must open with, not bury. |
 
 ## Part 3 — Indexing architecture: what's commodity, what's novel
 
@@ -64,6 +65,23 @@ Direct answer to "merkle trees, LiveGraph, Graphify, Graphiti, LSPs — what's o
 - **Graphiti / LiveGraph / Graphify:** wrong layer. Graphiti solves LLM-fact temporal graphs (our provenance story is stronger for code); LiveGraph-class systems solve concurrent transactional graph workloads we don't have (single-writer batch ingest). Revisit storage only if/when a hosted multi-tenant version needs concurrent writers — and even then Postgres, not a graph DB, is the likely answer.
 
 **The one-line novelty claim for the pitch:** *a deterministic, git-derived, temporally-compressed contract graph with provenance — delivered to coding agents before they write.* Every existing tool has at most two of those five properties.
+
+### Head-to-head: Graphify, specifically
+
+Graphify is the single biggest reason to sharpen rather than restate the plan. It is well-funded, already distributed as a multi-agent-platform skill, and structurally adjacent — a team evaluating "should we use OrgContext" will have Graphify in the room. The honest comparison:
+
+| Property | Graphify | OrgContext |
+|---|---|---|
+| Graph scope | Full structural graph (calls/imports/inherits) — broad, high-recall, noisier | Interface-only (routes/schemas/exports/topics/config) — narrow, lossy by design, high-signal |
+| Temporal | **None** — a snapshot, incrementally re-extracted on change, old state discarded | Change-event timeline per entity; origin + latest always retained |
+| Cross-*service* semantics | Cross-file within one indexed folder; no producer/consumer/breaking-change model | First-class: consumes/imports/depends_on_schema/subscribes edges, breaking-change classification |
+| Compression | None needed (no history to compress) | The hard, tuned part — never-drop-breaking guarantee, plateau under real churn |
+| Delivery | MCP + slash commands, broad agent-platform coverage (ahead of us today) | UPSTREAM.md + planned MCP (Phase C) — behind on distribution, must catch up |
+| Git-native | Git hooks for rebuild triggers only; not git-derived data | Every fact traces to a commit SHA; the timeline *is* git history |
+
+**Net:** Graphify answers "what does this code do and touch, right now." OrgContext answers "what changed in a contract I depend on, when, and did it break me." These are complementary questions, not the same product — but the danger is a buyer conflating them because Graphify got to agent-context distribution first. Two implications for the plan:
+1. **Don't compete on breadth or distribution speed** — Graphify's 36-language tree-sitter coverage and 15-platform skill footprint took real capital; racing there is a losing move. Phase C's MCP server should ship *fast* (weeks, not a differentiator to polish) purely to close the credibility gap, not to out-feature them.
+2. **Consider integration over rivalry as a hedge**: Graphify's JSON graph could be a candidate *structural backend* (replacing/supplementing our AST layer) the same way SCIP was scoped in Part 3 — we'd add the temporal/contract/compression layer on top rather than duplicate tree-sitter integration. Worth a technical spike in Phase B if their JSON schema is stable and licensable; do not build this dependency before validating it's wanted.
 
 ## Part 4 — Build roadmap
 
@@ -110,6 +128,7 @@ Observability integration (logs→code, traces), forge apps/marketplace, web das
 | Compression at real churn | High | Plateau eval over ≥500 real commits (Phase B target 2) |
 | Manifest rot | Medium | Heuristics upgrade manifests (`db.py:214`); add `orgctx doctor` warning for manifest edges unconfirmed after N commits |
 | GitHub absorption | Medium | Forge neutrality (GitLab/Bitbucket unaddressable by GitHub Next) + accumulated-timeline moat + openness |
+| **Graphify (or similar) adds a temporal/contract layer** | High | This is the real existential risk, higher than GitHub absorption — a funded, distributed incumbent bolting git-history + interface semantics onto an existing 87k-star install base is more likely than GitHub building this from scratch. Mitigate by moving fast on the compression-policy moat (Part 2 #2) — that's the part that takes real tuning time even for a well-resourced team — and by keeping the option to integrate rather than compete (see Part 3 head-to-head) |
 | Adoption friction | Medium | Single-PR value; hooks auto-install; useful before org-wide adoption |
 | LLM cost | Low | Haiku for summaries, Opus only for classification + edge fallback; batchable |
 
